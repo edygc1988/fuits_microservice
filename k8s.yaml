@@ -115,3 +115,17 @@ spec:
   ports:
     - port: 80
       targetPort: 3000
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fruits-ns-admin
+  namespace: fruits-ns
+subjects:
+- kind: User
+  name: edygc1988
+roleRef:
+  kind: ClusterRole
+  name: admin
+  apiGroup: rbac.authorization.k8s.io
