@@ -1,14 +1,8 @@
-
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: fruits-ns
----
 apiVersion: v1
 kind: Secret
 metadata:
   name: db-secret
-  namespace: fruits-ns
+  namespace: NAMESPACE_PLACEHOLDER
 type: Opaque
 data:
   password: cG9zdGdyZXM=  # "postgres" base64
@@ -17,7 +11,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
-  namespace: fruits-ns
+  namespace: NAMESPACE_PLACEHOLDER
 spec:
   accessModes: ["ReadWriteOnce"]
   resources:
@@ -28,7 +22,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: fruits-ns
+  namespace: NAMESPACE_PLACEHOLDER
 spec:
   replicas: 1
   selector:
@@ -62,7 +56,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: fruits-ns
+  namespace: NAMESPACE_PLACEHOLDER
 spec:
   selector:
     app: postgres
@@ -73,7 +67,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fruits-api
-  namespace: fruits-ns
+  namespace: NAMESPACE_PLACEHOLDER
 spec:
   replicas: 2
   selector:
@@ -108,24 +102,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: fruits-api
-  namespace: fruits-ns
+  namespace: NAMESPACE_PLACEHOLDER
 spec:
   selector:
     app: fruits-api
   ports:
     - port: 80
       targetPort: 3000
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: fruits-ns-admin
-  namespace: fruits-ns
-subjects:
-- kind: User
-  name: edygc1988
-roleRef:
-  kind: ClusterRole
-  name: admin
-  apiGroup: rbac.authorization.k8s.io

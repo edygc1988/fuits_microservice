@@ -37,15 +37,10 @@ jobs:
       - name: Set project
         run: oc project ${{ secrets.OPENSHIFT_NAMESPACE }}
 
-      - name: Delete namespace fruits-ns (if exists)
+      - name: Replace namespace in k8s.yaml
         run: |
-          oc delete namespace fruits-ns || true
-          sleep 10
-          # Espera a que el namespace se elimine completamente
-          while oc get namespace fruits-ns 2>/dev/null; do 
-            echo "Esperando que se elimine el namespace..."
-            sleep 5
-          done
+          sed "s/NAMESPACE_PLACEHOLDER/${{ secrets.OPENSHIFT_NAMESPACE }}/g" k8s.yaml > k8s-final.yaml
+          cat k8s-final.yaml
 
       - name: Apply Deployment
-        run: oc apply -f k8s.yaml
+        run: oc apply -f k8s-final.yaml
