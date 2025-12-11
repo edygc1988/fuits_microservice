@@ -38,4 +38,4 @@ jobs:
         run: oc project ${{ secrets.OPENSHIFT_NAMESPACE }}
 
       - name: Apply Deployment
-        run: oc apply -f openshift-deploy.yaml
+        run: oc apply -f k8s.yaml
