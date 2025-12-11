@@ -86,7 +86,7 @@ spec:
     spec:
       containers:
         - name: fruits-api
-          image: YOUR_DOCKER_IMAGE
+          image: edygc1988/fruits-api:latest
           env:
             - name: DB_HOST
               value: postgres
