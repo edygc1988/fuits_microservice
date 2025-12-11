@@ -1,0 +1,11 @@
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: fruits-api
+spec:
+  to:
+    kind: Service
+    name: fruits-api
+  port:
+    targetPort: 3000
