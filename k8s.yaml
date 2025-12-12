@@ -35,10 +35,7 @@ spec:
       labels:
         app: fruits-postgres
     spec:
-      securityContext:
-        fsGroup: 999          # UID correcto para postgres
-        runAsUser: 999        # Usuario postgres en la imagen oficial
-        runAsNonRoot: true
+      # SIN securityContext - OpenShift asigna automáticamente
       containers:
         - name: postgres
           image: postgres:14
@@ -196,23 +193,17 @@ spec:
       targetPort: 3000
       protocol: TCP
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: route.openshift.io/v1
+kind: Route
 metadata:
-  name: fruits-api-ingress
+  name: fruits-api-route
   namespace: edygc1988-dev
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  ingressClassName: nginx
-  rules:
-    - host: fruits-api.edygc1988-dev.svc.cluster.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: fruits-api
-                port:
-                  number: 80
+  to:
+    kind: Service
+    name: fruits-api
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
