@@ -6,7 +6,7 @@ metadata:
   namespace: edygc1988-dev
 type: Opaque
 data:
-  password: cG9zdGdyZXM=  # "postgres" base64
+  password: cG9zdGdyZXM=  # "postgres" en base64
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -36,7 +36,9 @@ spec:
         app: fruits-postgres
     spec:
       securityContext:
-        fsGroup: 1000   # << NECESARIO PARA PERMISOS EN OpenShift
+        fsGroup: 999          # UID correcto para postgres
+        runAsUser: 999        # Usuario postgres en la imagen oficial
+        runAsNonRoot: true
       containers:
         - name: postgres
           image: postgres:14
@@ -46,13 +48,46 @@ spec:
                 secretKeyRef:
                   name: fruits-db-secret
                   key: password
+            - name: POSTGRES_USER
+              value: postgres
             - name: POSTGRES_DB
               value: fruitsdb
             - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata  # << SUBDIRECTORIO OBLIGATORIO
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+              name: postgres
+              protocol: TCP
           volumeMounts:
             - name: pgdata
               mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U postgres -d fruitsdb
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U postgres -d fruitsdb
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
       volumes:
         - name: pgdata
           persistentVolumeClaim:
@@ -64,10 +99,14 @@ metadata:
   name: fruits-postgres
   namespace: edygc1988-dev
 spec:
+  type: ClusterIP
   selector:
     app: fruits-postgres
   ports:
-    - port: 5432
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -84,9 +123,22 @@ spec:
       labels:
         app: fruits-api
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z fruits-postgres 5432; do
+                echo "Esperando a PostgreSQL..."
+                sleep 2
+              done
+              echo "PostgreSQL está listo"
       containers:
         - name: fruits-api
           image: edygc1988/fruits-api:latest
+          imagePullPolicy: Always
           env:
             - name: DB_HOST
               value: fruits-postgres
@@ -103,6 +155,31 @@ spec:
               value: fruitsdb
           ports:
             - containerPort: 3000
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -110,8 +187,32 @@ metadata:
   name: fruits-api
   namespace: edygc1988-dev
 spec:
+  type: ClusterIP
   selector:
     app: fruits-api
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 3000
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fruits-api-ingress
+  namespace: edygc1988-dev
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: fruits-api.edygc1988-dev.svc.cluster.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fruits-api
+                port:
+                  number: 80
