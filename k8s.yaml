@@ -35,6 +35,8 @@ spec:
       labels:
         app: fruits-postgres
     spec:
+      securityContext:
+        fsGroup: 1000   # << NECESARIO PARA PERMISOS EN OpenShift
       containers:
         - name: postgres
           image: postgres:14
@@ -46,6 +48,8 @@ spec:
                   key: password
             - name: POSTGRES_DB
               value: fruitsdb
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata  # << SUBDIRECTORIO OBLIGATORIO
           volumeMounts:
             - name: pgdata
               mountPath: /var/lib/postgresql/data
