@@ -41,6 +41,15 @@ class Fruit(BaseModel):
     nombre: str
     descripcion: str
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Endpoint de health check"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'fruits-api service',
+        'timestamp': datetime.now().isoformat()
+    }), 200
+
 @app.get("/fruits")
 def get_fruits():
     conn = get_conn()
