@@ -1,18 +1,9 @@
 ---
-# PRIMERO: Namespace para la aplicación
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: fuits-namespace
-  labels:
-    name: fuits-namespace
----
-
 apiVersion: v1
 kind: Secret
 metadata:
   name: fruits-db-secret
-  namespace: fuits-namespace
+  namespace: edygc1988-dev
 type: Opaque
 data:
   password: cG9zdGdyZXM=  # "postgres" base64
@@ -21,9 +12,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: fruits-postgres-pvc
-  namespace: fuits-namespace
+  namespace: edygc1988-dev
 spec:
-  accessModes: ["ReadWriteOnce"]
+  accessModes:
+    - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
@@ -32,7 +24,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fruits-postgres
-  namespace: fuits-namespace
+  namespace: edygc1988-dev
 spec:
   replicas: 1
   selector:
@@ -66,7 +58,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: fruits-postgres
-  namespace: fuits-namespace
+  namespace: edygc1988-dev
 spec:
   selector:
     app: fruits-postgres
@@ -77,7 +69,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fruits-api
-  namespace: fuits-namespace
+  namespace: edygc1988-dev
 spec:
   replicas: 2
   selector:
@@ -112,7 +104,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: fruits-api
-  namespace: fuits-namespace
+  namespace: edygc1988-dev
 spec:
   selector:
     app: fruits-api
