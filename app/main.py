@@ -37,18 +37,22 @@ def startup_event():
     cur.close()
     conn.close()
 
+
 class Fruit(BaseModel):
     nombre: str
     descripcion: str
 
-@app.route('/health', methods=['GET'])
+# Endpoint de health check para FastAPI
+from datetime import datetime
+from fastapi.responses import JSONResponse
+
+@app.get("/health")
 def health_check():
-    """Endpoint de health check"""
-    return jsonify({
-        'status': 'healthy',
-        'service': 'fruits-api service',
-        'timestamp': datetime.now().isoformat()
-    }), 200
+    return JSONResponse(content={
+        "status": "healthy",
+        "service": "fruits-api service",
+        "timestamp": datetime.now().isoformat()
+    })
 
 @app.get("/fruits")
 def get_fruits():
